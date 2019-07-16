@@ -1,4 +1,3 @@
-import clientStart from './db'
 
 export class Metric {
   timestamp: string;
@@ -30,10 +29,9 @@ export class MetricsHandler {
   }
 
   public remove( query: any, callback: (err: Error | null, result?: any) => void) {
-    console.log('remove')
       const collection = this.db.collection('documents')
       // Delete some document
-      collection.deleteOne( {'value': 22}, function(err: any, result: any) {
+      collection.deleteOne( query, function(err: any, result: any) {
         if(err) return callback(err, result)
         console.log("Document deleted into the collection")
         callback(err, result)
@@ -43,10 +41,22 @@ export class MetricsHandler {
   public getA(metric: Metric, callback: (err: Error | null, result?: any) => void) {
       const collection = this.db.collection('documents')
       // Delete some document
-      collection.find( metric, function(err: any, result: any) {
-        if(err) return callback(err, result)
-        console.log("Document will get the collection")
-        callback(err, result)
+      collection.find({"value" : metric.value}).toArray(function(err: any, res: object) {
+        if(err) return callback(err, res);
+        console.log("Document will get the collection");
+        console.log(res);
+        callback(err, res);
+      });
+  }
+
+  public getB(callback: (err: Error | null, result?: any) => void) {
+      const collection = this.db.collection('documents')
+      // Delete some document
+      collection.find({}).toArray(function(err: any, res: object) {
+        if(err) return callback(err, res);
+        console.log("Document will get the collection");
+        console.log(res);
+        callback(err, res);
       });
   }
 

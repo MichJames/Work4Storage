@@ -21,12 +21,6 @@ MongoClient.connect("mongodb://localhost:27017", { useNewUrlParser: true }, (err
     }
     console.log(`server is listening on port ${port}`)
   })
-
-  insertManyDocuments(db, function() {
-    findDocuments(db, function() {
-      client.close();
-    });
-  });
 });
 
 app.use(bodyparser.json())
@@ -35,6 +29,7 @@ app.use(bodyparser.urlencoded({extended: true}))
 app.post('/metrics', (req: any, res: any) => {
   if(req.body.value){
     const metric = new Metric(new Date().getTime().toString(), parseInt(req.body.value));
+    console.log('Posted')
     new MetricsHandler(db).save(metric, (err: any, result: any) => {
       if (err)
         return res.status(500).json({error: err, result: result});
@@ -47,6 +42,7 @@ app.post('/metrics', (req: any, res: any) => {
 
 app.delete('/metrics', (req: any, res: any) => {
   if(req.body.value){
+    console.log('Removed')
     new MetricsHandler(db).remove({value: req.body.value}, (err: any, result: any) => {
       if (err)
         return res.status(500).json({error: err, result: result});
@@ -59,44 +55,21 @@ app.delete('/metrics', (req: any, res: any) => {
 
 app.get('/metrics', (req: any, res: any) => {
   if(req.body.value){
+    console.log('Got')
     const metric = new Metric(new Date().getTime().toString(), parseInt(req.body.value));
-    new MetricsHandler(db).save(metric, (err: any, result: any) => {
-      if (err)
-        return res.status(500).json({error: err, result: result});
-      res.status(201).json({error: err, result: true})
+    new MetricsHandler(db).getA(metric, (err: Error | null, result? : any) => {
+      if (err) {
+        throw err
+      }
+      res.json(result);
     })
   }else{
-    return res.status(400).json({error: 'Wrong request parameter',});
+    console.log('GotAll')
+    new MetricsHandler(db).getB((err: Error | null, result? : any) => {
+      if (err) {
+          throw err
+        }
+        res.json(result);
+      })
   }
 })
-
-const insertManyDocuments = function(db: any, callback: any) {
-  // Get the documents collection
-  const collection = db.collection('documents');
-  // Insert some documents
-  const metrics: Metric[] = [
-    { timestamp: new Date().getTime().toString(), value: 11},
-    { timestamp: new Date().getTime().toString(), value: 22},
-    { timestamp: new Date().getTime().toString(), value: 22},
-  ]
-  collection.insertMany(
-    metrics,
-    function(err: any, result: any) {
-      if(err)
-        throw err
-      console.log("Document inserted into the collection");
-      callback(result);
-  });
-}
-
-const findDocuments = function(db: any, callback: any) {
-  // Get the documents collection
-  const collection = db.collection('documents');
-  // Find some documents
-  collection.find({}).toArray(function(err: any, docs: object) {
-    if(err)
-      throw err
-    console.log("Found the following documents");
-    callback(docs);
-  });
-}
